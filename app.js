@@ -36,12 +36,13 @@ app.post('/delta', async (req, res) => {
       PREFIX prov: <http://www.w3.org/ns/prov#>
       PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
       PREFIX dct: <http://purl.org/dc/terms/>
-      SELECT ?physicalFileUri
+      SELECT ?physicalFileUri ?subject
       WHERE {
         GRAPH <${TASK_GRAPH}> {
           ${sparqlEscapeUri(taskUri)} prov:used ?logicalFileUri .
           ?physicalFileUri nie:dataSource ?logicalFileUri ;
             dct:created ?created .
+          OPTIONAL { ${sparqlEscapeUri(taskUri)} dct:subject ?subject .}
         }
       } ORDER BY ?created`);
       const fileUris = queryResult.results.bindings;
@@ -51,7 +52,7 @@ app.post('/delta', async (req, res) => {
           const ttlFile = fileUri.replace('share://', '/share/');
           const deltaFile = getPathForDeltaFile(ttlFile);
           await convertTtlToDelta(ttlFile, deltaFile);
-          await addResultFileToTask(taskUri, deltaFile);
+          await addResultFileToTask(taskUri, deltaFile, fileUris[i].subject?.value);
         }
         await changeTaskStatus(taskUri, SUCCESSFUL_STATUS);
         res.end('Task completed succesfully');
@@ -134,7 +135,7 @@ function convertToDeltaFormat(node) {
   }
 }
 
-async function addResultFileToTask(taskUri, filePath) {
+async function addResultFileToTask(taskUri, filePath, subject) {
   const fileName = path.basename(filePath);
   const extension = path.extname(filePath);
   const format = 'application/json';
@@ -163,6 +164,7 @@ async function addResultFileToTask(taskUri, filePath) {
           dct:format ${sparqlEscapeString(format)};
           nfo:fileSize ${sparqlEscapeInt(size)};
           dbpedia:fileExtension ${sparqlEscapeString(extension)};
+          ${subject ? `dct:subject ${sparqlEscapeUri(subject)} ;` : ''}
           dct:creator <http://redpencil.data.gift/services/ttl-to-delta-service>;
           dct:created ${sparqlEscapeDateTime(created)} .
         ${sparqlEscapeUri(physicalFileUri)} a nfo:FileDataObject;
