@@ -151,7 +151,6 @@ The generated delta files are written to the store according to the [model of th
 |-----------|---------------|-----------------|-------------------------------------------------------------------------------------------------------|
 | publisher | `dct:creator` | `rdfs:Resource` | Creator of the file, in this case always `<http://redpencil.data.gift/services/ttl-to-delta-service>` |
 
-
 #### TTL-to-delta task statuses
 | Label       | URI                                                                                |
 |-------------|------------------------------------------------------------------------------------|
